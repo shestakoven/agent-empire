@@ -1,0 +1,439 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 217.2 91.2% 59.8%;
+    --radius: 0.75rem;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 217.2 91.2% 59.8%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
+
+  /* Selection styling */
+  ::selection {
+    @apply bg-primary/30 text-primary-foreground;
+  }
+
+  /* Focus styles */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer components {
+  /* Agent Empire UI Components */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4;
+  }
+
+  .btn-secondary {
+    @apply btn bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 py-2 px-4;
+  }
+
+  .btn-ghost {
+    @apply btn hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4;
+  }
+
+  .btn-outline {
+    @apply btn border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4;
+  }
+
+  .btn-cyber {
+    @apply btn bg-gradient-to-r from-cyber-500 to-electric-500 text-white hover:from-cyber-600 hover:to-electric-600 shadow-glow h-10 py-2 px-4;
+  }
+
+  .btn-neon {
+    @apply btn bg-transparent border-2 border-neon-400 text-neon-400 hover:bg-neon-400 hover:text-black transition-all duration-300 animate-glow h-10 py-2 px-4;
+  }
+
+  /* Card components */
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+  }
+
+  .card-cyber {
+    @apply card bg-gradient-to-br from-background/50 to-background/80 border-cyber-500/20 shadow-cyber backdrop-blur-sm;
+  }
+
+  .card-glass {
+    @apply card bg-glass border-white/20 backdrop-blur-md;
+  }
+
+  .card-neon {
+    @apply card border-neon-400/50 shadow-neon;
+  }
+
+  /* Input components */
+  .input {
+    @apply flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .input-cyber {
+    @apply input border-cyber-500/30 focus-visible:ring-cyber-500 bg-background/50;
+  }
+
+  .input-neon {
+    @apply input border-neon-400/30 focus-visible:ring-neon-400 bg-background/50 focus-visible:shadow-glow-sm;
+  }
+
+  /* Typography */
+  .heading {
+    @apply font-heading font-bold tracking-tight;
+  }
+
+  .heading-1 {
+    @apply heading text-4xl lg:text-5xl;
+  }
+
+  .heading-2 {
+    @apply heading text-3xl lg:text-4xl;
+  }
+
+  .heading-3 {
+    @apply heading text-2xl lg:text-3xl;
+  }
+
+  .heading-cyber {
+    @apply heading gradient-text;
+  }
+
+  .heading-neon {
+    @apply heading text-neon-400 text-glow;
+  }
+
+  /* Agent specific components */
+  .agent-card {
+    @apply card-cyber p-6 hover:shadow-glow-lg transition-all duration-300 group;
+  }
+
+  .agent-avatar {
+    @apply w-16 h-16 rounded-full border-2 border-cyber-400 shadow-glow-sm bg-gradient-to-br from-cyber-400 to-electric-400;
+  }
+
+  .agent-status-online {
+    @apply bg-neon-400 shadow-[0_0_10px_rgba(34,197,94,0.8)] animate-pulse;
+  }
+
+  .agent-status-offline {
+    @apply bg-gray-400;
+  }
+
+  .agent-status-working {
+    @apply bg-electric-400 shadow-[0_0_10px_rgba(217,70,239,0.8)] animate-pulse;
+  }
+
+  /* Earnings display */
+  .earnings-positive {
+    @apply text-neon-400 font-mono font-bold;
+  }
+
+  .earnings-negative {
+    @apply text-red-400 font-mono font-bold;
+  }
+
+  .earnings-neutral {
+    @apply text-gray-400 font-mono;
+  }
+
+  /* Loading states */
+  .skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-transparent border-t-current;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .nav-link-active {
+    @apply nav-link bg-accent text-accent-foreground;
+  }
+
+  /* Layout */
+  .container-cyber {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-cyber {
+    @apply py-24 lg:py-32 relative overflow-hidden;
+  }
+
+  .section-cyber::before {
+    content: '';
+    @apply absolute inset-0 bg-cyber-grid bg-cyber-grid opacity-20 pointer-events-none;
+  }
+
+  /* Hero section specific */
+  .hero-gradient {
+    background: linear-gradient(
+      135deg,
+      theme('colors.background') 0%,
+      theme('colors.cyber.950') 25%,
+      theme('colors.electric.950') 75%,
+      theme('colors.background') 100%
+    );
+  }
+
+  /* Animations */
+  .float-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    from {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+    }
+    to {
+      box-shadow: 0 0 40px rgba(6, 182, 212, 0.8);
+    }
+  }
+
+  /* Matrix rain effect */
+  .matrix-rain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .matrix-char {
+    position: absolute;
+    color: theme('colors.neon.400');
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    opacity: 0.1;
+    animation: matrix-rain 3s linear infinite;
+  }
+
+  /* Cyber scan line effect */
+  .cyber-scan {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cyber-scan::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(6, 182, 212, 0.4),
+      transparent
+    );
+    animation: cyber-scan 2s ease-in-out infinite;
+  }
+
+  /* Stats display */
+  .stat-card {
+    @apply card-cyber p-6 text-center;
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold font-mono gradient-text;
+  }
+
+  .stat-label {
+    @apply text-sm text-muted-foreground uppercase tracking-wider;
+  }
+
+  /* Feature cards */
+  .feature-card {
+    @apply card-glass p-8 text-center group hover:scale-105 transition-all duration-300;
+  }
+
+  .feature-icon {
+    @apply w-12 h-12 mx-auto mb-4 text-cyber-400 group-hover:animate-pulse;
+  }
+
+  /* Social proof */
+  .testimonial-card {
+    @apply card-cyber p-6 relative;
+  }
+
+  .testimonial-card::before {
+    content: '"';
+    @apply absolute -top-2 -left-2 text-6xl text-cyber-400/20 font-bold;
+  }
+
+  /* CTA sections */
+  .cta-section {
+    @apply section-cyber bg-gradient-to-r from-cyber-950 to-electric-950 text-center;
+  }
+
+  .cta-button {
+    @apply btn-cyber text-lg px-8 py-4 h-auto shadow-glow-lg hover:shadow-glow-lg hover:scale-105 transition-all duration-300;
+  }
+
+  /* Agent creation wizard */
+  .wizard-step {
+    @apply card-cyber p-8 space-y-6;
+  }
+
+  .wizard-nav {
+    @apply flex items-center justify-between border-t border-border pt-6;
+  }
+
+  .wizard-progress {
+    @apply w-full bg-muted rounded-full h-2 overflow-hidden;
+  }
+
+  .wizard-progress-bar {
+    @apply h-full bg-gradient-to-r from-cyber-400 to-electric-400 transition-all duration-500;
+  }
+
+  /* Dashboard specific */
+  .dashboard-grid {
+    @apply grid gap-6 md:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .dashboard-card {
+    @apply card-cyber p-6 hover:shadow-glow transition-all duration-300;
+  }
+
+  .metric-card {
+    @apply dashboard-card text-center;
+  }
+
+  .metric-value {
+    @apply text-2xl font-bold font-mono;
+  }
+
+  .metric-change-positive {
+    @apply text-neon-400 text-sm;
+  }
+
+  .metric-change-negative {
+    @apply text-red-400 text-sm;
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .heading-1 {
+      @apply text-3xl;
+    }
+    
+    .heading-2 {
+      @apply text-2xl;
+    }
+    
+    .section-cyber {
+      @apply py-16;
+    }
+    
+    .feature-card {
+      @apply p-6;
+    }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-dot-pattern {
+    background-image: radial-gradient(circle, rgba(6, 182, 212, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+}

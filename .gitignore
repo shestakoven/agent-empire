@@ -129,8 +129,8 @@ prisma/migrations/
 # Turbo
 .turbo
 
-# Cursor
-.cursor/
+# Cursor (keeping for team collaboration)
+# .cursor/
 
 # Local SSL certificates
 *.pem

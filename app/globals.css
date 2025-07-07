@@ -177,7 +177,7 @@
 
   /* Agent specific components */
   .agent-card {
-    @apply card-cyber p-6 hover:shadow-glow-lg transition-all duration-300 group;
+    @apply card-cyber p-6 hover:shadow-glow-lg transition-all duration-300;
   }
 
   .agent-avatar {
@@ -332,11 +332,11 @@
 
   /* Feature cards */
   .feature-card {
-    @apply card-glass p-8 text-center group hover:scale-105 transition-all duration-300;
+    @apply card-glass p-8 text-center hover:scale-105 transition-all duration-300;
   }
 
   .feature-icon {
-    @apply w-12 h-12 mx-auto mb-4 text-cyber-400 group-hover:animate-pulse;
+    @apply w-12 h-12 mx-auto mb-4 text-cyber-400;
   }
 
   /* Social proof */

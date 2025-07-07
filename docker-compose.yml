@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agent_empire
+    ports:
+      - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+  app:
+    build: .
+    depends_on:
+      - db
+      - redis
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/agent_empire
+      REDIS_URL: redis://redis:6379
+      # Add other env vars as needed, or use env_file
+    env_file:
+      - .env.local
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./:/app
+    command: ["npm", "run", "dev"]
+
+volumes:
+  db_data:
+  redis_data: 

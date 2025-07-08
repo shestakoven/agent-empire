@@ -111,9 +111,9 @@ export default function Dashboard() {
                 <p className="text-muted-foreground mb-4">
                   Track your agents' performance and earnings in real-time.
                 </p>
-                <button className="btn-outline">
+                <Link href="/stats" className="btn-outline">
                   View Stats
-                </button>
+                </Link>
               </div>
 
               <div className="feature-card">
@@ -121,9 +121,9 @@ export default function Dashboard() {
                 <p className="text-muted-foreground mb-4">
                   Buy and sell successful AI agents with other users.
                 </p>
-                <button className="btn-outline">
+                <Link href="/marketplace" className="btn-outline">
                   Browse Market
-                </button>
+                </Link>
               </div>
             </div>
 

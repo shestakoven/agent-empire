@@ -23,6 +23,23 @@ Agent Empire is now a **production-ready AI-powered trading platform** with comp
 
 **Testing**: Use the new `/api/websocket/test-auth` endpoint to verify authentication is working.
 
+## 🔧 **Recent UI Fix: OAuth Loading States**
+
+**Fixed Critical Bug**: OAuth sign-in buttons on Login and Signup pages were getting stuck in loading state indefinitely.
+
+**Previous Issues Fixed:**
+- ❌ Google/GitHub buttons remained disabled after clicking
+- ❌ Loading spinner continued indefinitely 
+- ❌ Poor user experience during OAuth flow
+- ❌ Users couldn't retry OAuth if first attempt failed
+
+**New Implementation:**
+- ✅ **Separate Loading States**: OAuth buttons have independent loading states
+- ✅ **Visual Feedback**: Spinning loader shows during OAuth redirect
+- ✅ **Proper State Management**: Loading state resets properly on errors
+- ✅ **Timeout Protection**: 10-second timeout prevents stuck states
+- ✅ **Better UX**: Clear "Connecting..." text during OAuth flow
+
 ## 🏗️ System Architecture
 
 ### Core Components
@@ -346,6 +363,7 @@ curl http://localhost:3000/api/health
 ### Manual Testing Checklist
 
 - [ ] User registration and login
+- [ ] **OAuth Sign-in Flow** (Google/GitHub buttons show loading state correctly)
 - [ ] Agent creation wizard
 - [ ] Agent marketplace browsing
 - [ ] Analytics dashboard

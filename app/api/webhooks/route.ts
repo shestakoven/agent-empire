@@ -253,7 +253,6 @@ async function handleAgentStatusWebhook(payload: WebhookPayload, userId: string)
            userId: agentData.userId,
            name: agentData.name,
            type: 'trading' as any, // Default type since it's not stored in database
-           model: agentData.model,
            isActive: true,
            // Add other required fields
          } as any)

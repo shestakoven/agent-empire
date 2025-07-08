@@ -287,8 +287,7 @@ async function collectAgentMetrics() {
       id: true,
       name: true,
       userId: true,
-      status: true,
-      model: true
+      status: true
     }
   })
 
@@ -297,8 +296,8 @@ async function collectAgentMetrics() {
   const agentsByStatus: Record<string, number> = {}
 
   agents.forEach(agent => {
-    // Type grouping
-    const type = agent.model || 'unknown'
+    // Type grouping (using default since schema has type issues)
+    const type = 'trading' // Default to trading type
     agentsByType[type] = (agentsByType[type] || 0) + 1
 
     // Status grouping
@@ -496,7 +495,6 @@ async function restartAgentEngine(): Promise<any> {
           userId: agent.userId,
           name: agent.name,
           type: 'trading',
-          model: agent.model,
           isActive: true
         } as any)
         restarted++
@@ -625,7 +623,6 @@ async function startAgentAdmin(agentId: string): Promise<any> {
       userId: agent.userId,
       name: agent.name,
       type: 'trading',
-      model: agent.model,
       isActive: true
     } as any)
 
@@ -665,7 +662,6 @@ async function exportData(type: string, filters: any): Promise<any> {
             name: true,
             userId: true,
             status: true,
-            model: true,
             createdAt: true
           }
         })

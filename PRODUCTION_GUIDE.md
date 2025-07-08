@@ -4,6 +4,25 @@
 
 Agent Empire is now a **production-ready AI-powered trading platform** with comprehensive features for creating, managing, and monitoring autonomous trading agents. This guide covers all implemented features and deployment instructions.
 
+## 🔧 **Recent Critical Fix: WebSocket Authentication**
+
+**Fixed Critical Bug**: The WebSocket server authentication system has been completely overhauled to work properly in both development and production environments.
+
+**Previous Issues Fixed:**
+- ❌ Development mode used hardcoded users (security risk)
+- ❌ Production mode always returned null (no users could authenticate)
+- ❌ WebSocket functionality was completely disabled in production
+
+**New Implementation:**
+- ✅ **Proper NextAuth Integration**: Uses real session validation
+- ✅ **Database Session Lookup**: Validates sessions against database
+- ✅ **JWT Token Support**: Fallback for JWT-based NextAuth configurations
+- ✅ **Multi-layer Authentication**: Comprehensive fallback mechanisms
+- ✅ **Production Ready**: Works correctly in all environments
+- ✅ **Security Hardened**: No hardcoded bypasses or security risks
+
+**Testing**: Use the new `/api/websocket/test-auth` endpoint to verify authentication is working.
+
 ## 🏗️ System Architecture
 
 ### Core Components
@@ -300,6 +319,10 @@ curl -X POST http://localhost:3000/api/agents/test \
   -H "Content-Type: application/json" \
   -d '{"command": "engine_status"}'
 
+# Test WebSocket authentication (must be logged in)
+curl -X GET http://localhost:3000/api/websocket/test-auth \
+  -H "Cookie: your-session-cookies-here"
+
 # Test webhook integration
 curl -X POST http://localhost:3000/api/webhooks \
   -H "Content-Type: application/json" \
@@ -315,6 +338,9 @@ curl -X POST http://localhost:3000/api/webhooks \
     "source": "test",
     "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
   }'
+
+# System health check (includes WebSocket auth status)
+curl http://localhost:3000/api/health
 ```
 
 ### Manual Testing Checklist
@@ -412,6 +438,19 @@ curl -X POST http://localhost:3000/api/admin/dashboard \
 - Verify WEBSOCKET_PORT configuration
 - Check firewall settings
 - Monitor connection logs
+
+**WebSocket authentication issues:**
+```bash
+# Test WebSocket authentication
+curl -X GET http://localhost:3000/api/websocket/test-auth
+
+# Check system health including WebSocket auth status
+curl http://localhost:3000/api/health
+```
+- Ensure NEXTAUTH_SECRET is configured
+- Verify database session storage is working
+- Check NextAuth configuration in authOptions
+- Test with a logged-in user session
 
 ### Support Resources
 

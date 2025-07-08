@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import agentEngine from '@/lib/agents/agent-engine'
+import webSocketServer from '@/lib/websocket/websocket-server'
 import os from 'os'
 
 const prisma = new PrismaClient()
@@ -14,6 +15,7 @@ interface SystemHealth {
   components: {
     database: ComponentHealth
     agentEngine: ComponentHealth
+    websocket: ComponentHealth
     memoryUsage: ComponentHealth
     cpuUsage: ComponentHealth
     diskUsage: ComponentHealth
@@ -109,6 +111,7 @@ async function collectSystemHealth(): Promise<SystemHealth> {
   const [
     databaseHealth,
     agentEngineHealth,
+    websocketHealth,
     memoryHealth,
     cpuHealth,
     diskHealth,
@@ -117,6 +120,7 @@ async function collectSystemHealth(): Promise<SystemHealth> {
   ] = await Promise.allSettled([
     checkDatabaseHealth(),
     checkAgentEngineHealth(),
+    checkWebSocketHealth(),
     checkMemoryHealth(),
     checkCpuHealth(),
     checkDiskHealth(),
@@ -128,6 +132,7 @@ async function collectSystemHealth(): Promise<SystemHealth> {
   const components = {
     database: getResult(databaseHealth),
     agentEngine: getResult(agentEngineHealth),
+    websocket: getResult(websocketHealth),
     memoryUsage: getResult(memoryHealth),
     cpuUsage: getResult(cpuHealth),
     diskUsage: getResult(diskHealth)
@@ -220,6 +225,52 @@ async function checkAgentEngineHealth(): Promise<ComponentHealth> {
     return {
       status: 'critical',
       message: `Agent engine check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      lastChecked: new Date(),
+      responseTime: Date.now() - startTime
+    }
+  }
+}
+
+async function checkWebSocketHealth(): Promise<ComponentHealth> {
+  const startTime = Date.now()
+  
+  try {
+    const authStatus = webSocketServer.getAuthenticationStatus()
+    const connectionCount = webSocketServer.getConnectionCount()
+    const responseTime = Date.now() - startTime
+    
+    // Determine health based on authentication configuration and connections
+    let status: 'healthy' | 'degraded' | 'critical' = 'healthy'
+    let message = `WebSocket server healthy, ${connectionCount} connections`
+    
+    if (!authStatus.nextAuthConfigured) {
+      status = 'degraded'
+      message = 'NextAuth not properly configured for WebSocket'
+    } else if (!authStatus.jwtSecretConfigured) {
+      status = 'degraded'
+      message = 'JWT secret not configured for WebSocket authentication'
+    } else if (!authStatus.databaseConnected) {
+      status = 'critical'
+      message = 'Database not connected for WebSocket authentication'
+    }
+    
+    return {
+      status,
+      message,
+      metrics: {
+        connectedUsers: connectionCount,
+        authenticationConfigured: authStatus.nextAuthConfigured,
+        jwtSecretConfigured: authStatus.jwtSecretConfigured,
+        databaseConnected: authStatus.databaseConnected,
+        authenticationWorking: status !== 'critical'
+      },
+      lastChecked: new Date(),
+      responseTime
+    }
+  } catch (error) {
+    return {
+      status: 'critical',
+      message: `WebSocket health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       lastChecked: new Date(),
       responseTime: Date.now() - startTime
     }

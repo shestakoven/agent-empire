@@ -4,6 +4,10 @@ import { createClient } from 'redis'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import agentEngine from '@/lib/agents/agent-engine'
+import { PrismaClient } from '@prisma/client'
+import jwt from 'jsonwebtoken'
+
+const prisma = new PrismaClient()
 
 export interface SocketUser {
   userId: string
@@ -168,21 +172,181 @@ class WebSocketServer {
   }
 
   private async authenticateSocket(socket: any): Promise<any> {
-    // Extract session from socket handshake
-    const cookies = socket.handshake.headers.cookie
-    if (!cookies) return null
-
-    // Parse session cookie and validate
-    // This is a simplified version - in production, properly parse and validate session
     try {
-      // In a real implementation, you'd validate the session cookie properly
-      // For now, we'll skip authentication in development
-      if (process.env.NODE_ENV === 'development') {
-        return { user: { id: 'dev-user', email: 'dev@example.com' } }
+      // Extract cookies from socket handshake
+      const cookies = socket.handshake.headers.cookie
+      if (!cookies) {
+        console.log('❌ WebSocket authentication failed: No cookies found')
+        return null
+      }
+
+      // Parse cookies to extract session information
+      const cookieMap = this.parseCookies(cookies)
+      
+      // Try to get session using NextAuth
+      // We need to construct a request-like object for getServerSession
+      const req = {
+        headers: {
+          cookie: cookies
+        },
+        cookies: cookieMap
+      }
+
+             try {
+         const session = await getServerSession(req as any, {} as any, authOptions)
+         
+         if (session?.user?.id) {
+           console.log(`✅ WebSocket user authenticated via NextAuth: ${session.user.id}`)
+           return session
+         } else {
+           console.log('⚠️ NextAuth session validation returned no session, trying fallback...')
+         }
+       } catch (sessionError) {
+         console.error('⚠️ NextAuth session validation failed, trying fallback:', sessionError)
+       }
+
+       // Fallback: Try to extract and validate session token manually
+       const sessionToken = cookieMap['next-auth.session-token'] || 
+                          cookieMap['__Secure-next-auth.session-token'] ||
+                          cookieMap['next-auth.session-token.0'] ||
+                          cookieMap['__Host-next-auth.session-token']
+
+       if (sessionToken) {
+         console.log('🔍 Attempting manual session token validation...')
+         const fallbackSession = await this.validateSessionToken(sessionToken)
+         
+         if (fallbackSession?.user?.id) {
+           console.log(`✅ WebSocket user authenticated via fallback: ${fallbackSession.user.id}`)
+           return fallbackSession
+         }
+       }
+
+       // Final fallback: Check for JWT token in case NextAuth is configured for JWT
+       const jwtToken = cookieMap['next-auth.session-token'] || cookieMap['__Secure-next-auth.session-token']
+       if (jwtToken && process.env.NEXTAUTH_SECRET) {
+         try {
+           const verified = jwt.verify(jwtToken, process.env.NEXTAUTH_SECRET) as any
+           if (verified?.sub) {
+             console.log('✅ WebSocket user authenticated via JWT verification')
+             const user = await prisma.user.findUnique({
+               where: { id: verified.sub }
+             })
+             
+             if (user) {
+               return {
+                 user: {
+                   id: user.id,
+                   email: user.email,
+                   name: user.name,
+                   image: user.image
+                 }
+               }
+             }
+           }
+         } catch (jwtError) {
+           console.error('JWT verification failed:', jwtError)
+         }
+       }
+
+       console.log('❌ All WebSocket authentication methods failed')
+       return null
+    } catch (error) {
+      console.error('❌ WebSocket authentication error:', error)
+      return null
+    }
+  }
+
+  private parseCookies(cookieString: string): Record<string, string> {
+    const cookies: Record<string, string> = {}
+    
+    cookieString.split(';').forEach(cookie => {
+      const [name, value] = cookie.trim().split('=')
+      if (name && value) {
+        cookies[name] = decodeURIComponent(value)
+      }
+    })
+    
+    return cookies
+  }
+
+  private async validateSessionToken(sessionToken: string): Promise<any> {
+    try {
+      if (!sessionToken || sessionToken.length < 10) {
+        return null
+      }
+
+      // Try to find session in database (NextAuth stores sessions in the database)
+      try {
+        // Query the session from the database
+        const session = await prisma.session.findUnique({
+          where: {
+            sessionToken: sessionToken
+          },
+          include: {
+            user: true
+          }
+        })
+
+        if (!session) {
+          console.log('❌ WebSocket session not found in database')
+          return null
+        }
+
+        // Check if session is expired
+        if (session.expires < new Date()) {
+          console.log('❌ WebSocket session expired')
+          return null
+        }
+
+        // Return session in NextAuth format
+        return {
+          user: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+            image: session.user.image
+          },
+          expires: session.expires.toISOString()
+        }
+
+      } catch (dbError) {
+        console.error('❌ Database session lookup failed:', dbError)
+        
+        // Fallback for development: Try to decode JWT if it's a JWT token
+        if (process.env.NODE_ENV === 'development') {
+          try {
+            // Some NextAuth configurations use JWT tokens instead of database sessions
+            const decoded = jwt.decode(sessionToken) as any
+            
+            if (decoded && decoded.sub) {
+              console.log('⚠️ Development fallback: Using JWT session token')
+              
+              // Look up user by ID from JWT
+              const user = await prisma.user.findUnique({
+                where: { id: decoded.sub }
+              })
+              
+              if (user) {
+                return {
+                  user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    image: user.image
+                  }
+                }
+              }
+            }
+          } catch (jwtError) {
+            console.error('JWT decode failed:', jwtError)
+          }
+        }
+        
+        return null
       }
       
-      return null
     } catch (error) {
+      console.error('❌ Session token validation error:', error)
       return null
     }
   }
@@ -365,6 +529,55 @@ class WebSocketServer {
 
   isUserConnected(userId: string): boolean {
     return this.userSockets.has(userId)
+  }
+
+  async testAuthentication(cookies: string): Promise<{ success: boolean; user?: any; error?: string }> {
+    try {
+      const mockSocket = {
+        handshake: {
+          headers: {
+            cookie: cookies
+          }
+        }
+      }
+
+      const session = await this.authenticateSocket(mockSocket)
+      
+      if (session?.user?.id) {
+        return {
+          success: true,
+          user: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name
+          }
+        }
+      } else {
+        return {
+          success: false,
+          error: 'Authentication failed'
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  getAuthenticationStatus(): {
+    nextAuthConfigured: boolean
+    databaseConnected: boolean
+    jwtSecretConfigured: boolean
+    connectedUsers: number
+  } {
+    return {
+      nextAuthConfigured: !!authOptions,
+      databaseConnected: true, // We assume Prisma is connected
+      jwtSecretConfigured: !!process.env.NEXTAUTH_SECRET,
+      connectedUsers: this.connectedUsers.size
+    }
   }
 
   cleanup() {

@@ -24,6 +24,11 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 217.2 91.2% 59.8%;
     --radius: 0.75rem;
+    
+    /* Modern Font System */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
   }
 
   .light {
@@ -54,6 +59,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -91,6 +97,27 @@
 }
 
 @layer components {
+  /* Modern Typography */
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  .heading-1 {
+    @apply text-4xl md:text-5xl lg:text-6xl font-heading font-bold tracking-tight;
+  }
+
+  .heading-2 {
+    @apply text-3xl md:text-4xl lg:text-5xl font-heading font-bold tracking-tight;
+  }
+
+  .heading-3 {
+    @apply text-2xl md:text-3xl font-heading font-semibold tracking-tight;
+  }
+
   /* Agent Empire UI Components */
   .btn {
     @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background;

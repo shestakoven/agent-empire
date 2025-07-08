@@ -1,12 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// Simplified schema for testing authentication
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -16,12 +14,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -38,68 +36,43 @@ model Session {
 }
 
 model User {
-  id                String   @id @default(cuid())
-  email             String   @unique
-  username          String?  @unique
-  name              String?
-  image             String?
-  bio               String?
-  website           String?
-  location          String?
-  verified          Boolean  @default(false)
-  emailVerified     DateTime?
-  password          String?
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   
-  // Social connections
-  twitterHandle     String?
-  discordId         String?
-  telegramHandle    String?
-  
-  // Subscription & billing
-  stripeCustomerId  String?  @unique
-  subscription      UserSubscription?
-  subscriptionTier  SubscriptionTier @default(FREE)
-  subscriptionEnds  DateTime?
-  
-  // Wallet & crypto
-  walletAddress     String?
-  privateKey        String? // Encrypted
-  totalEarnings     Float   @default(0)
-  availableBalance  Float   @default(0)
-  
-  // Referral system
-  referralCode      String  @unique @default(cuid())
-  referredBy        String?
-  referrer          User?   @relation("UserReferrals", fields: [referredBy], references: [id])
-  referredUsers     User[]  @relation("UserReferrals")
-  referralEarnings  Float   @default(0)
-  
-  // Settings & preferences
-  settings          UserSettings?
-  notificationPrefs NotificationPreferences?
-  
-  // Activity tracking
-  lastActiveAt      DateTime @default(now())
-  loginCount        Int      @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  // Relations
-  agents            Agent[]
-  accounts          Account[]
-  sessions          Session[]
-  apiKeys           ApiKey[]
-  transactions      Transaction[]
-  posts             Post[]
-  likes             Like[]
-  comments          Comment[]
-  follows           Follow[] @relation("UserFollows")
-  followers         Follow[] @relation("UserFollowers")
-  agentPurchases    AgentPurchase[]
-  supportTickets    SupportTicket[]
-  notifications     Notification[]
+  accounts      Account[]
+  sessions      Session[]
+  agents        Agent[]
   
   @@map("users")
+}
+
+model Agent {
+  id               String   @id @default(cuid())
+  name             String
+  type             String   // trading, content, automation
+  personality      String   // conservative, balanced, aggressive, analytical, creative
+  goals            String?
+  riskTolerance    String   @default("medium") // low, medium, high
+  maxBudget        Float    @default(100)
+  tradingPairs     String?  // JSON array as string
+  socialPlatforms  String?  // JSON array as string  
+  automationTasks  String?  // JSON array as string
+  status           String   @default("active") // active, paused, stopped
+  earnings         Float    @default(0)
+  lastActivity     DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("agents")
 }
 
 model VerificationToken {
@@ -108,540 +81,4 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-}
-
-model Agent {
-  id            String      @id @default(cuid())
-  userId        String
-  name          String
-  username      String      @unique
-  description   String?
-  avatar        String?
-  personality   Json        // AI personality configuration
-  status        AgentStatus @default(CREATED)
-  
-  // AI Configuration
-  model         String      @default("gpt-4") // AI model being used
-  systemPrompt  String      @db.Text
-  temperature   Float       @default(0.7)
-  maxTokens     Int         @default(1000)
-  
-  // Capabilities
-  capabilities  AgentCapability[]
-  
-  // Crypto & Trading
-  walletAddress String?
-  privateKey    String? // Encrypted
-  totalEarnings Float   @default(0)
-  currentValue  Float   @default(0)
-  
-  // Social Media
-  twitterId     String?
-  twitterToken  String? // Encrypted
-  instagramId   String?
-  tiktokId      String?
-  
-  // Performance metrics
-  successRate   Float   @default(0)
-  totalTrades   Int     @default(0)
-  totalPosts    Int     @default(0)
-  followerCount Int     @default(0)
-  engagementRate Float  @default(0)
-  
-  // Marketplace
-  forSale       Boolean @default(false)
-  price         Float?
-  
-  // Activity tracking
-  lastActiveAt  DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  // Relations
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trades        Trade[]
-  posts         Post[]
-  tasks         Task[]
-  analytics     AgentAnalytics[]
-  purchases     AgentPurchase[]
-  interactions  AgentInteraction[]
-  
-  @@map("agents")
-}
-
-model Task {
-  id          String     @id @default(cuid())
-  agentId     String
-  type        TaskType
-  status      TaskStatus @default(PENDING)
-  
-  // Task configuration
-  config      Json       // Task-specific configuration
-  priority    Int        @default(1)
-  
-  // Scheduling
-  scheduledFor DateTime?
-  startedAt   DateTime?
-  completedAt DateTime?
-  
-  // Results
-  result      Json?      // Task execution result
-  error       String?    // Error message if failed
-  
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
-  // Relations
-  agent       Agent      @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  @@map("tasks")
-}
-
-model Post {
-  id          String      @id @default(cuid())
-  agentId     String
-  userId      String?     // If posted by user manually
-  platform    Platform
-  content     String      @db.Text
-  media       String[]    // URLs to images/videos
-  
-  // Platform-specific IDs
-  twitterId   String?
-  instagramId String?
-  tiktokId    String?
-  
-  // Performance metrics
-  likes       Int         @default(0)
-  comments    Int         @default(0)
-  shares      Int         @default(0)
-  views       Int         @default(0)
-  engagement  Float       @default(0)
-  
-  // Scheduling
-  scheduledFor DateTime?
-  publishedAt DateTime?
-  
-  // Status
-  status      PostStatus  @default(DRAFT)
-  
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
-  // Relations
-  agent       Agent?      @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  user        User?       @relation(fields: [userId], references: [id])
-  postLikes   Like[]
-  postComments Comment[]
-  
-  @@map("posts")
-}
-
-model Trade {
-  id            String      @id @default(cuid())
-  agentId       String
-  type          TradeType
-  status        TradeStatus @default(PENDING)
-  
-  // Trade details
-  symbol        String      // BTC/USD, ETH/USD, etc.
-  side          TradeSide   // BUY or SELL
-  amount        Float       // Amount in base currency
-  price         Float       // Price at execution
-  value         Float       // Total value in quote currency
-  
-  // Exchange info
-  exchange      String
-  exchangeOrderId String?
-  
-  // Profit/Loss
-  pnl           Float       @default(0)
-  fees          Float       @default(0)
-  
-  // Timing
-  executedAt    DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  
-  // Relations
-  agent         Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  @@map("trades")
-}
-
-model Transaction {
-  id          String            @id @default(cuid())
-  userId      String
-  type        TransactionType
-  status      TransactionStatus @default(PENDING)
-  
-  // Amount details
-  amount      Float
-  currency    String            @default("USD")
-  
-  // External references
-  stripePaymentId String?
-  walletTxHash   String?        // Blockchain transaction hash
-  
-  // Metadata
-  description String?
-  metadata    Json?
-  
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  
-  // Relations
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("transactions")
-}
-
-model Like {
-  id      String @id @default(cuid())
-  userId  String
-  postId  String
-  
-  createdAt DateTime @default(now())
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, postId])
-  @@map("likes")
-}
-
-model Comment {
-  id      String @id @default(cuid())
-  userId  String
-  postId  String
-  content String @db.Text
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
-  @@map("comments")
-}
-
-model Follow {
-  id          String @id @default(cuid())
-  followerId  String
-  followingId String
-  
-  createdAt DateTime @default(now())
-  
-  follower  User @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
-  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
-  
-  @@unique([followerId, followingId])
-  @@map("follows")
-}
-
-model AgentAnalytics {
-  id              String   @id @default(cuid())
-  agentId         String
-  date            DateTime @db.Date
-  
-  // Trading metrics
-  tradesExecuted  Int      @default(0)
-  totalVolume     Float    @default(0)
-  profitLoss      Float    @default(0)
-  successRate     Float    @default(0)
-  
-  // Social metrics
-  postsPublished  Int      @default(0)
-  totalLikes      Int      @default(0)
-  totalComments   Int      @default(0)
-  totalShares     Int      @default(0)
-  followersGained Int      @default(0)
-  
-  // General metrics
-  uptime          Float    @default(0) // Percentage
-  tasksCompleted  Int      @default(0)
-  errorsCount     Int      @default(0)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Relations
-  agent           Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  @@unique([agentId, date])
-  @@map("agent_analytics")
-}
-
-model AgentPurchase {
-  id        String   @id @default(cuid())
-  buyerId   String
-  agentId   String
-  price     Float
-  status    PurchaseStatus @default(PENDING)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  buyer     User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  @@map("agent_purchases")
-}
-
-model AgentInteraction {
-  id        String           @id @default(cuid())
-  agentId   String
-  type      InteractionType
-  input     String           @db.Text
-  output    String           @db.Text
-  context   Json?
-  rating    Int?             // 1-5 user rating
-  
-  createdAt DateTime         @default(now())
-  
-  // Relations
-  agent     Agent            @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  
-  @@map("agent_interactions")
-}
-
-model UserSubscription {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  stripeSubscriptionId String @unique
-  status            String
-  priceId           String
-  currentPeriodStart DateTime
-  currentPeriodEnd  DateTime
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  // Relations
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("user_subscriptions")
-}
-
-model SupportTicket {
-  id        String       @id @default(cuid())
-  userId    String
-  subject   String
-  message   String       @db.Text
-  status    TicketStatus @default(OPEN)
-  priority  TicketPriority @default(NORMAL)
-  
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  
-  // Relations
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("support_tickets")
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String           @db.Text
-  read      Boolean          @default(false)
-  data      Json?            // Additional data for the notification
-  
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  
-  // Relations
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("notifications")
-}
-
-model ApiKey {
-  id         String    @id @default(cuid())
-  userId     String
-  name       String
-  keyHash    String    @unique
-  keyPreview String // First 8 chars for display
-  scopes     String[]
-  lastUsed   DateTime?
-  expiresAt  DateTime?
-  active     Boolean   @default(true)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("api_keys")
-}
-
-model UserSettings {
-  id             String  @id @default(cuid())
-  userId         String  @unique
-  theme          String  @default("dark")
-  language       String  @default("en")
-  timezone       String  @default("UTC")
-  currency       String  @default("USD")
-  emailMarketing Boolean @default(true)
-  publicProfile  Boolean @default(true)
-  showEarnings   Boolean @default(false)
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("user_settings")
-}
-
-model NotificationPreferences {
-  id                String  @id @default(cuid())
-  userId            String  @unique
-  emailNotifications Boolean @default(true)
-  pushNotifications Boolean @default(true)
-  agentUpdates      Boolean @default(true)
-  marketingEmails   Boolean @default(false)
-  securityAlerts    Boolean @default(true)
-  earningsReports   Boolean @default(true)
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("notification_preferences")
-}
-
-enum SubscriptionTier {
-  FREE
-  BASIC
-  PRO
-  ENTERPRISE
-}
-
-enum AgentStatus {
-  CREATED
-  TRAINING
-  ACTIVE
-  PAUSED
-  ERROR
-  ARCHIVED
-}
-
-enum AgentCapability {
-  TRADING
-  SOCIAL_MEDIA
-  CONTENT_CREATION
-  DATA_ANALYSIS
-  CUSTOMER_SERVICE
-  RESEARCH
-  AUTOMATION
-}
-
-enum TradeType {
-  SPOT
-  FUTURES
-  OPTIONS
-  MARGIN
-}
-
-enum TradeStatus {
-  PENDING
-  EXECUTING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-
-enum TradeSide {
-  BUY
-  SELL
-}
-
-enum Platform {
-  TWITTER
-  INSTAGRAM
-  TIKTOK
-  LINKEDIN
-  YOUTUBE
-  DISCORD
-  TELEGRAM
-}
-
-enum PostStatus {
-  DRAFT
-  SCHEDULED
-  PUBLISHED
-  FAILED
-  DELETED
-}
-
-enum TaskType {
-  TRADE_EXECUTION
-  SOCIAL_POST
-  CONTENT_GENERATION
-  MARKET_ANALYSIS
-  PORTFOLIO_REBALANCING
-  CUSTOM
-}
-
-enum TaskStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-
-enum TransactionType {
-  DEPOSIT
-  WITHDRAWAL
-  SUBSCRIPTION
-  COMMISSION
-  REFERRAL_BONUS
-  AGENT_PURCHASE
-  PLATFORM_FEE
-}
-
-enum TransactionStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  CANCELLED
-  REFUNDED
-}
-
-enum PurchaseStatus {
-  PENDING
-  COMPLETED
-  CANCELLED
-  REFUNDED
-}
-
-enum InteractionType {
-  CHAT
-  COMMAND
-  API_CALL
-  WEBHOOK
-  SCHEDULED_TASK
-}
-
-enum TicketStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-}
-
-enum TicketPriority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
-}
-
-enum NotificationType {
-  AGENT_CREATED
-  TRADE_EXECUTED
-  POST_PUBLISHED
-  EARNINGS_UPDATE
-  SYSTEM_ALERT
-  SUBSCRIPTION_UPDATE
-  SECURITY_ALERT
 }

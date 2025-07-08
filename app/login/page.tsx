@@ -2,15 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-export default function SignupPage() {
+export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: '',
-    agreeToTerms: false
+    rememberMe: false
   });
   const [isLoading, setIsLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | 'github' | null>(null);
@@ -19,53 +18,20 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.agreeToTerms) {
-      setError('Please agree to the terms and conditions');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
     setIsLoading(true);
     setError('');
 
     try {
-      // Create account via API
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+      const result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
       });
 
-      if (response.ok) {
-        // Sign in after successful signup
-        const result = await signIn('credentials', {
-          email: formData.email,
-          password: formData.password,
-          redirect: false,
-        });
-
-        if (result?.ok) {
-          router.push('/dashboard');
-        } else {
-          setError('Failed to sign in after signup');
-        }
+      if (result?.ok) {
+        router.push('/dashboard');
       } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to create account');
+        setError('Invalid email or password');
       }
     } catch (error) {
       setError('Something went wrong. Please try again.');
@@ -110,10 +76,10 @@ export default function SignupPage() {
       <div className="card-cyber w-full max-w-md p-8 space-y-6 relative z-10">
         <div className="text-center space-y-2">
           <h1 className="heading-2 gradient-text">
-            Join Agent Empire
+            Welcome Back
           </h1>
           <p className="text-muted-foreground">
-            Create your account and start building AI agents that make money
+            Sign in to your Agent Empire account
           </p>
         </div>
 
@@ -142,9 +108,14 @@ export default function SignupPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium text-foreground">
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="text-sm font-medium text-foreground">
+                Password
+              </label>
+              <Link href="/forgot-password" className="text-sm text-cyber-400 hover:text-cyber-300">
+                Forgot password?
+              </Link>
+            </div>
             <input
               id="password"
               name="password"
@@ -154,56 +125,31 @@ export default function SignupPage() {
               required
               disabled={isLoading}
               className="input-cyber w-full"
-              placeholder="Create a password"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              disabled={isLoading}
-              className="input-cyber w-full"
-              placeholder="Confirm your password"
+              placeholder="Enter your password"
             />
           </div>
 
           <div className="flex items-center space-x-2">
             <input
-              id="agreeToTerms"
-              name="agreeToTerms"
+              id="rememberMe"
+              name="rememberMe"
               type="checkbox"
-              checked={formData.agreeToTerms}
+              checked={formData.rememberMe}
               onChange={handleChange}
-              required
               disabled={isLoading}
               className="rounded border-cyber-400 text-cyber-400 focus:ring-cyber-400"
             />
-            <label htmlFor="agreeToTerms" className="text-sm text-muted-foreground">
-              I agree to the{' '}
-              <Link href="/terms" className="text-cyber-400 hover:text-cyber-300 underline">
-                Terms of Service
-              </Link>
-              {' '}and{' '}
-              <Link href="/privacy" className="text-cyber-400 hover:text-cyber-300 underline">
-                Privacy Policy
-              </Link>
+            <label htmlFor="rememberMe" className="text-sm text-muted-foreground">
+              Remember me for 30 days
             </label>
           </div>
 
           <button
             type="submit"
             className="btn-cyber w-full py-3 text-lg font-semibold"
-            disabled={!formData.agreeToTerms || isLoading}
+            disabled={isLoading}
           >
-            {isLoading ? 'Creating Account...' : 'Create Account'}
+            {isLoading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
@@ -252,13 +198,13 @@ export default function SignupPage() {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Link href="/login" className="text-cyber-400 hover:text-cyber-300 underline font-medium">
-              Sign in
+            Don't have an account?{' '}
+            <Link href="/signup" className="text-cyber-400 hover:text-cyber-300 underline font-medium">
+              Sign up for free
             </Link>
           </p>
         </div>
       </div>
     </div>
   );
-} 
+}

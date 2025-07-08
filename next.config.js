@@ -60,11 +60,7 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      {
-        source: '/dashboard',
-        destination: '/app/dashboard',
-        permanent: false,
-      },
+      // Removed dashboard redirect - dashboard is now at /dashboard
       {
         source: '/agents',
         destination: '/app/agents',

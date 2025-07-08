@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -10,11 +12,65 @@ export default function SignupPage() {
     confirmPassword: '',
     agreeToTerms: false
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement signup logic
-    console.log('Signup form submitted:', formData);
+    if (!formData.agreeToTerms) {
+      setError('Please agree to the terms and conditions');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Create account via API
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      if (response.ok) {
+        // Sign in after successful signup
+        const result = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        });
+
+        if (result?.ok) {
+          router.push('/dashboard');
+        } else {
+          setError('Failed to sign in after signup');
+        }
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Failed to create account');
+      }
+    } catch (error) {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,6 +79,12 @@ export default function SignupPage() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleOAuthSignIn = async (provider: 'google' | 'github') => {
+    setIsLoading(true);
+    await signIn(provider, { callbackUrl: '/dashboard' });
+    setIsLoading(false);
   };
 
   return (
@@ -39,6 +101,12 @@ export default function SignupPage() {
           </p>
         </div>
 
+        {error && (
+          <div className="p-3 rounded-md bg-red-900/50 border border-red-500 text-red-200 text-sm">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-foreground">
@@ -51,6 +119,7 @@ export default function SignupPage() {
               value={formData.email}
               onChange={handleChange}
               required
+              disabled={isLoading}
               className="input-cyber w-full"
               placeholder="Enter your email"
             />
@@ -67,6 +136,7 @@ export default function SignupPage() {
               value={formData.password}
               onChange={handleChange}
               required
+              disabled={isLoading}
               className="input-cyber w-full"
               placeholder="Create a password"
             />
@@ -83,6 +153,7 @@ export default function SignupPage() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
+              disabled={isLoading}
               className="input-cyber w-full"
               placeholder="Confirm your password"
             />
@@ -96,6 +167,7 @@ export default function SignupPage() {
               checked={formData.agreeToTerms}
               onChange={handleChange}
               required
+              disabled={isLoading}
               className="rounded border-cyber-400 text-cyber-400 focus:ring-cyber-400"
             />
             <label htmlFor="agreeToTerms" className="text-sm text-muted-foreground">
@@ -113,9 +185,9 @@ export default function SignupPage() {
           <button
             type="submit"
             className="btn-cyber w-full py-3 text-lg font-semibold"
-            disabled={!formData.agreeToTerms}
+            disabled={!formData.agreeToTerms || isLoading}
           >
-            Create Account
+            {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 
@@ -130,7 +202,11 @@ export default function SignupPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <button className="btn-outline flex items-center justify-center gap-2 py-2">
+            <button 
+              onClick={() => handleOAuthSignIn('google')}
+              disabled={isLoading}
+              className="btn-outline flex items-center justify-center gap-2 py-2"
+            >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -139,7 +215,11 @@ export default function SignupPage() {
               </svg>
               Google
             </button>
-            <button className="btn-outline flex items-center justify-center gap-2 py-2">
+            <button 
+              onClick={() => handleOAuthSignIn('github')}
+              disabled={isLoading}
+              className="btn-outline flex items-center justify-center gap-2 py-2"
+            >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.024-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.750-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001 12.017.001z"/>
               </svg>

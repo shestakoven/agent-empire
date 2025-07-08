@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Providers } from './providers'
 
 export const metadata: Metadata = {
   title: 'Agent Empire - AI Agents That Make Money',
@@ -43,7 +44,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body className="min-h-screen bg-dark-900 text-white antialiased">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

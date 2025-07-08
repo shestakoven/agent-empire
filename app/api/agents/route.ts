@@ -26,28 +26,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For now, store in a simple JSON structure
-    // In production, you'd have a proper agents table
-    const agent = {
-      id: `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: agentData.name,
-      type: agentData.type,
-      personality: agentData.personality,
-      goals: agentData.goals || '',
-      riskTolerance: agentData.riskTolerance || 'medium',
-      maxBudget: agentData.maxBudget || 100,
-      tradingPairs: agentData.tradingPairs || [],
-      socialPlatforms: agentData.socialPlatforms || [],
-      automationTasks: agentData.automationTasks || [],
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      earnings: 0,
-      userId: session.user.id
-    }
+    // Create agent in database
+    const agent = await prisma.agent.create({
+      data: {
+        name: agentData.name,
+        type: agentData.type,
+        personality: agentData.personality,
+        goals: agentData.goals || '',
+        riskTolerance: agentData.riskTolerance || 'medium',
+        maxBudget: agentData.maxBudget || 100,
+        tradingPairs: agentData.tradingPairs ? JSON.stringify(agentData.tradingPairs) : null,
+        socialPlatforms: agentData.socialPlatforms ? JSON.stringify(agentData.socialPlatforms) : null,
+        automationTasks: agentData.automationTasks ? JSON.stringify(agentData.automationTasks) : null,
+        status: 'active',
+        earnings: 0,
+        userId: session.user.id
+      }
+    })
 
-    // In a real implementation, you'd save to a database
-    // For now, we'll just return the agent data
-    console.log('Agent created:', agent)
+    console.log('Agent created and saved to database:', agent)
 
     return NextResponse.json(agent, { status: 201 })
   } catch (error) {
@@ -70,31 +67,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // For demo purposes, return some sample agents
-    const sampleAgents = [
-      {
-        id: 'agent_sample_1',
-        name: 'CryptoTrader Pro',
-        type: 'trading',
-        personality: 'analytical',
-        status: 'active',
-        earnings: 247.83,
-        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-        lastActivity: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
+    // Fetch user's agents from database
+    const agents = await prisma.agent.findMany({
+      where: {
+        userId: session.user.id
       },
-      {
-        id: 'agent_sample_2', 
-        name: 'ViralBot Supreme',
-        type: 'content',
-        personality: 'creative',
-        status: 'active',
-        earnings: 156.92,
-        createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-        lastActivity: new Date(Date.now() - 1800000).toISOString() // 30 min ago
+      orderBy: {
+        createdAt: 'desc'
       }
-    ]
+    })
 
-    return NextResponse.json(sampleAgents)
+    // Parse JSON fields for frontend
+    const agentsWithParsedData = agents.map(agent => ({
+      ...agent,
+      tradingPairs: agent.tradingPairs ? JSON.parse(agent.tradingPairs) : [],
+      socialPlatforms: agent.socialPlatforms ? JSON.parse(agent.socialPlatforms) : [],
+      automationTasks: agent.automationTasks ? JSON.parse(agent.automationTasks) : []
+    }))
+
+    return NextResponse.json(agentsWithParsedData)
   } catch (error) {
     console.error('Error fetching agents:', error)
     return NextResponse.json(

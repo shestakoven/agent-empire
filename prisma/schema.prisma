@@ -47,8 +47,32 @@ model User {
   
   accounts      Account[]
   sessions      Session[]
+  agents        Agent[]
   
   @@map("users")
+}
+
+model Agent {
+  id               String   @id @default(cuid())
+  name             String
+  type             String   // trading, content, automation
+  personality      String   // conservative, balanced, aggressive, analytical, creative
+  goals            String?
+  riskTolerance    String   @default("medium") // low, medium, high
+  maxBudget        Float    @default(100)
+  tradingPairs     String?  // JSON array as string
+  socialPlatforms  String?  // JSON array as string  
+  automationTasks  String?  // JSON array as string
+  status           String   @default("active") // active, paused, stopped
+  earnings         Float    @default(0)
+  lastActivity     DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("agents")
 }
 
 model VerificationToken {
